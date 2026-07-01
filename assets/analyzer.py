@@ -66,7 +66,7 @@ def _dpi_map(doc):
 
 def _analyze_images(doc, progress=None):
     dmap = _dpi_map(doc)
-    low_dpi, over_tac, rgb_imgs = [], [], []
+    low_dpi, over_tac, rgb_imgs, yellow_pages = [], [], [], []
     yellow = trace = green = ypix = 0
 
     # Liste des images uniques (avec leur 1re page) pour connaître le total
@@ -111,19 +111,25 @@ def _analyze_images(doc, progress=None):
                                              "area": round(pct, 1)})
                     yel = (Y >= Y_MIN) & (M <= M_MAX) & (K <= K_MAX)
                     pol = yel & (C >= C_MIN)
-                    yellow += int(yel.sum())
-                    trace += int((pol & (C < CYAN_TRACE_MAX)).sum())
+                    iy = int(yel.sum())
+                    it = int((pol & (C < CYAN_TRACE_MAX)).sum())
+                    yellow += iy
+                    trace += it
                     green += int((pol & (C >= CYAN_TRACE_MAX)).sum())
                     ypix += a.shape[0] * a.shape[1]
+                    # Page à signaler : assez de jaune ET part de cyan notable.
+                    if iy >= 300 and it / iy >= 0.05:
+                        yellow_pages.append({"page": page, "pct": round(100 * it / iy)})
             except Exception:
                 pass
         if progress:
             progress(i + 1, total)
 
-    low_dpi.sort(key=lambda x: x["dpi"])
-    over_tac.sort(key=lambda x: -x["area"])
+    low_dpi.sort(key=lambda x: x["page"])
+    over_tac.sort(key=lambda x: x["page"])
     return {"low_dpi": low_dpi, "over_tac": over_tac, "rgb_imgs": rgb_imgs,
-            "yellow": yellow, "trace": trace, "green": green}
+            "yellow": yellow, "trace": trace, "green": green,
+            "yellow_pages": yellow_pages}
 
 
 def _iter_streams(doc):
@@ -333,13 +339,19 @@ def analyze(data, progress=None):
     yp = img["yellow"] or 1
     tr_pct = round(100 * img["trace"] / yp)
     if img["trace"] > 0 and tr_pct >= 5:
+        # Pages à vérifier (dédupliquées, part de cyan max par page, triées).
+        by_page = {}
+        for e in img["yellow_pages"]:
+            by_page[e["page"]] = max(by_page.get(e["page"], 0), e["pct"])
+        items = [f"page {pg} (~{pct}% cyan in the yellows)"
+                 for pg, pct in sorted(by_page.items())]
         findings.append({
             "key": "yellow", "severity": "warn",
             "title": "Yellows that may shift green",
             "message": f"About {tr_pct}% of yellow areas contain some cyan "
                        "(tends to shift toward green on uncoated paper). "
-                       "Worth checking in the artwork.",
-            "items": []})
+                       "Worth checking in the artwork on these pages:",
+            "items": items})
     else:
         findings.append({
             "key": "yellow", "severity": "ok", "title": "Clean yellows",

@@ -174,8 +174,9 @@ main { padding: 26px 0 60px; }
 .error h2 { font-family: "Baloo 2", cursive; margin: 0 0 6px; }
 
 footer { text-align: center; padding: 30px 20px 44px; color: var(--ink-soft);
-  font-size: .85rem; }
-footer .mark { font-family: "Shantell Sans", cursive; color: var(--ink); }
+  font-size: .85rem; line-height: 1.9; }
+footer a { color: var(--coral); text-decoration: none; font-weight: 700; }
+footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 .hidden { display: none !important; }
 
