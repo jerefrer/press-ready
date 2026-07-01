@@ -1,16 +1,16 @@
-/* Bon à tirer — orchestration Pyodide + rendu du rapport (100 % client-side). */
+/* Press Ready — UI + analysis worker orchestration (100% client-side). */
 
 const $ = (id) => document.getElementById(id);
 const el = {
   dropSection: $("dropSection"), drop: $("drop"), file: $("file"),
   loading: $("loading"), loadTitle: $("loadTitle"), loadMsg: $("loadMsg"),
+  bar: $("bar"), barFill: $("barFill"), eta: $("eta"),
   report: $("report"), summary: $("summary"), cards: $("cards"),
   errorBox: $("errorBox"), errorMsg: $("errorMsg"),
   printBtn: $("printBtn"), againBtn: $("againBtn"), retryBtn: $("retryBtn"),
 };
 
-let pyodide = null;
-let analyzerSrc = null;
+let worker = null;
 
 const show = (name) => {
   for (const s of ["dropSection", "loading", "report", "errorBox"]) {
@@ -18,44 +18,58 @@ const show = (name) => {
   }
 };
 
-const setLoad = (title, msg) => {
-  if (title) el.loadTitle.textContent = title;
-  if (msg !== undefined) el.loadMsg.textContent = msg;
-};
-
-// Prépare Pyodide + PyMuPDF au premier usage (mise en cache navigateur ensuite).
-async function ensureEngine() {
-  if (pyodide) return;
-  setLoad("Mixing the inks…", "Setting up the workshop (one time).");
-  pyodide = await loadPyodide();
-  setLoad(null, "Loading the analysis tools…");
-  await pyodide.loadPackage(["numpy", "Pillow"]);
-  setLoad(null, "Loading the PDF reader…");
-  await pyodide.loadPackage("./vendor/pymupdf-1.28.0-cp313-abi3-pyemscripten_2025_0_wasm32.whl");
-  analyzerSrc = await (await fetch("assets/analyzer.py")).text();
-  pyodide.runPython(analyzerSrc);
+function setBar(progress) {
+  if (progress == null) {
+    el.bar.classList.add("indeterminate");
+  } else {
+    el.bar.classList.remove("indeterminate");
+    el.barFill.style.width = Math.max(0, Math.min(1, progress)) * 100 + "%";
+  }
 }
 
-async function analyze(file) {
+function fmtEta(sec) {
+  if (sec == null || !isFinite(sec)) return "";
+  if (sec < 60) return "about " + sec + "s left";
+  return "about " + Math.ceil(sec / 60) + " min left";
+}
+
+function onStatus(m) {
+  if (m.message !== undefined) el.loadMsg.textContent = m.message || "";
+  setBar(m.progress);
+  el.eta.textContent = fmtEta(m.eta);
+}
+
+function ensureWorker() {
+  if (worker) return worker;
+  worker = new Worker("assets/worker.js");
+  worker.onmessage = (e) => {
+    const m = e.data;
+    if (m.type === "status") onStatus(m);
+    else if (m.type === "result") renderReport(m.result, currentName);
+    else if (m.type === "error") showError(m.message);
+  };
+  worker.onerror = (e) => showError(e.message || "worker error");
+  return worker;
+}
+
+let currentName = "";
+
+function analyze(file) {
+  currentName = file.name;
   show("loading");
-  setLoad("Mixing the inks…", "");
-  try {
-    await ensureEngine();
-    setLoad("Reading your PDF…", file.name);
-    const buf = new Uint8Array(await file.arrayBuffer());
-    pyodide.globals.set("pdf_bytes", buf);
-    const resultJson = await pyodide.runPythonAsync(`
-import json
-_res = analyze(bytes(pdf_bytes.to_py()))
-json.dumps(_res)
-`);
-    renderReport(JSON.parse(resultJson), file.name);
-  } catch (e) {
-    console.error(e);
-    el.errorMsg.textContent =
-      "Technical detail: " + (e && e.message ? e.message : e);
-    show("errorBox");
-  }
+  el.loadTitle.textContent = "Mixing the inks…";
+  el.loadMsg.textContent = "The first load takes a little longer, then it's instant.";
+  el.eta.textContent = "";
+  setBar(0.03);
+  file.arrayBuffer().then((ab) => {
+    const bytes = new Uint8Array(ab);
+    ensureWorker().postMessage({ type: "analyze", bytes }, [bytes.buffer]);
+  });
+}
+
+function showError(msg) {
+  el.errorMsg.textContent = "Technical detail: " + msg;
+  show("errorBox");
 }
 
 const ICON = { ok: "✓", warn: "!", crit: "×" };
@@ -71,7 +85,7 @@ function renderReport(res, filename) {
       <p>${good
         ? "No issues found on the usual checks."
         : `${res.n_crit} important point(s) and ${res.n_warn} to check before printing.`}</p>
-      <p class="file">${filename} · ${res.pages} page(s)${res.meta.pdfx ? " · " + res.meta.pdfx : ""}</p>
+      <p class="file">${escapeHtml(filename)} · ${res.pages} page(s)${res.meta.pdfx ? " · " + res.meta.pdfx : ""}</p>
     </div>`;
 
   const order = { crit: 0, warn: 1, ok: 2 };
@@ -80,8 +94,8 @@ function renderReport(res, filename) {
     <div class="card ${f.severity}">
       <div class="badge ${f.severity}" aria-hidden="true">${ICON[f.severity]}</div>
       <div>
-        <h3>${f.title}</h3>
-        <p>${f.message}</p>
+        <h3>${escapeHtml(f.title)}</h3>
+        <p>${escapeHtml(f.message)}</p>
         ${f.items && f.items.length
           ? "<ul>" + f.items.map((i) => `<li>${escapeHtml(i)}</li>`).join("") + "</ul>"
           : ""}
@@ -98,8 +112,7 @@ function escapeHtml(s) {
 function pick(file) {
   if (!file) return;
   if (file.type && file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-    el.errorMsg.textContent = "This file isn't a PDF.";
-    show("errorBox");
+    showError("This file isn't a PDF.");
     return;
   }
   analyze(file);
@@ -117,7 +130,6 @@ el.file.addEventListener("change", (e) => pick(e.target.files[0]));
   el.drop.addEventListener(ev, (e) => { e.preventDefault(); el.drop.classList.remove("drag"); }));
 el.drop.addEventListener("drop", (e) => pick(e.dataTransfer.files[0]));
 
-// éviter que le navigateur ouvre le PDF si on rate la zone
 window.addEventListener("dragover", (e) => e.preventDefault());
 window.addEventListener("drop", (e) => e.preventDefault());
 

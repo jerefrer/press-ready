@@ -61,7 +61,8 @@ header { padding: 42px 0 8px; text-align: center; }
 }
 .tagline {
   font-size: 1.05rem; color: var(--ink-soft);
-  margin: 12px auto 0; max-width: 30em;
+  margin: 12px auto 0; max-width: 34em;
+  text-wrap: balance;
 }
 
 /* ---------- Zone de dépôt ---------- */
@@ -113,6 +114,16 @@ main { padding: 26px 0 60px; }
 }
 .loading h2 { font-family: "Baloo 2", cursive; font-size: 1.4rem; margin: 0 0 6px; }
 .loading p { color: var(--ink-soft); margin: 0; min-height: 1.4em; }
+.bar { width: min(420px, 80%); height: 10px; margin: 20px auto 8px;
+  background: #EFE7D6; border-radius: 999px; overflow: hidden; }
+.bar-fill { height: 100%; width: 3%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--cyan), var(--rose), var(--sun), var(--coral), var(--cyan));
+  background-size: 300% 100%; transition: width .3s ease;
+  animation: flow 2.4s linear infinite; }
+@keyframes flow { from { background-position: 0% 0; } to { background-position: 300% 0; } }
+.bar.indeterminate .bar-fill { width: 40%; animation: slide 1.3s ease-in-out infinite; }
+@keyframes slide { 0% { margin-left: -42%; } 100% { margin-left: 102%; } }
+.eta { font-size: .85rem; color: var(--ink-soft); min-height: 1.2em; }
 
 /* ---------- Rapport ---------- */
 .summary {
@@ -178,7 +189,8 @@ footer .mark { font-family: "Shantell Sans", cursive; color: var(--ink); }
 
 @media (prefers-reduced-motion: reduce) {
   .ink-drop { animation: none; opacity: .8; }
-  .drop, .btn { transition: none; }
+  .bar.indeterminate .bar-fill, .bar-fill { animation: none; }
+  .drop, .btn, .bar-fill { transition: none; }
 }
 
 @media (max-width: 560px) {
