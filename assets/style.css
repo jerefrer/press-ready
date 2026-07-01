@@ -1,0 +1,187 @@
+/* Bon à tirer — feuille de style
+   Univers : livre jeunesse peint de Sally + les 4 encres d'impression (CMJN). */
+
+:root {
+  --paper:   #FBF6EC;
+  --paper-2: #F4ECDC;
+  --ink:     #322C3D;   /* noir-prune : texte */
+  --ink-soft:#6E6678;
+  --coral:   #E8543B;   /* rouge signature (le pull du garçon) */
+  --cyan:    #23A6B8;
+  --rose:    #E1608A;
+  --sun:     #F2B33D;
+  --leaf:    #6FA85C;   /* vert = tout bon */
+  --leaf-bg: #EAF3E4;
+  --amber-bg:#FBEFD8;
+  --crit-bg: #FBE4DE;
+  --card:    #FFFDF8;
+  --line:    #E7DECB;
+  --shadow:  0 12px 34px -18px rgba(50,44,61,.35);
+  --radius:  22px;
+  --maxw:    920px;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: "Nunito", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(35,166,184,.06), transparent 42%),
+    radial-gradient(circle at 88% 12%, rgba(225,96,138,.06), transparent 40%),
+    radial-gradient(circle at 78% 88%, rgba(242,179,61,.07), transparent 44%);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 22px; }
+
+/* ---------- En-tête ---------- */
+header { padding: 42px 0 8px; text-align: center; }
+.dots { display: flex; gap: 9px; justify-content: center; margin-bottom: 14px; }
+.dots i {
+  width: 15px; height: 15px; border-radius: 50%; display: block;
+  filter: blur(.2px);
+  box-shadow: 0 3px 8px -3px rgba(50,44,61,.4);
+}
+.dots i:nth-child(1){ background: var(--cyan); }
+.dots i:nth-child(2){ background: var(--rose); }
+.dots i:nth-child(3){ background: var(--sun); }
+.dots i:nth-child(4){ background: var(--ink); }
+.wordmark {
+  font-family: "Shantell Sans", cursive;
+  font-weight: 600;
+  font-size: clamp(2.4rem, 6vw, 3.6rem);
+  line-height: 1;
+  margin: 0;
+  color: var(--ink);
+}
+.tagline {
+  font-size: 1.05rem; color: var(--ink-soft);
+  margin: 12px auto 0; max-width: 30em;
+}
+
+/* ---------- Zone de dépôt ---------- */
+main { padding: 26px 0 60px; }
+.drop {
+  position: relative;
+  background: var(--card);
+  border: 2.5px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 60px 30px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .25s, transform .25s, background .25s;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.drop:hover { transform: translateY(-2px); border-color: var(--coral); }
+.drop.drag { border-color: var(--coral); background: #FFF9F1; transform: scale(1.01); }
+.drop:focus-visible { outline: 3px solid var(--cyan); outline-offset: 4px; }
+/* pastilles d'encre en coin, ambiance atelier */
+.drop .blob { position: absolute; width: 80px; height: 80px; border-radius: 50%;
+  filter: blur(14px); opacity: .5; pointer-events: none; }
+.drop .blob.c { background: var(--cyan);  top: -22px; left: -18px; }
+.drop .blob.m { background: var(--rose);  bottom: -26px; left: 30%; }
+.drop .blob.y { background: var(--sun);   top: -20px; right: 24%; }
+.drop .blob.k { background: var(--coral); bottom: -24px; right: -18px; }
+.drop-icon { font-size: 2.6rem; }
+.drop h2 { font-family: "Baloo 2", cursive; font-weight: 700;
+  font-size: 1.5rem; margin: 12px 0 4px; }
+.drop p { margin: 0; color: var(--ink-soft); }
+.drop .browse { color: var(--coral); font-weight: 700; text-decoration: underline;
+  text-underline-offset: 3px; }
+.privacy { text-align: center; color: var(--ink-soft); font-size: .9rem;
+  margin: 16px auto 0; max-width: 34em; }
+.privacy b { color: var(--leaf); }
+
+/* ---------- Chargement : les 4 encres qui s'étalent ---------- */
+.loading { text-align: center; padding: 60px 20px; }
+.ink-row { display: flex; gap: 18px; justify-content: center; margin-bottom: 22px; }
+.ink-drop { width: 34px; height: 34px; border-radius: 50%;
+  animation: bloom 1.4s ease-in-out infinite; }
+.ink-drop.c { background: var(--cyan); animation-delay: 0s; }
+.ink-drop.m { background: var(--rose); animation-delay: .18s; }
+.ink-drop.y { background: var(--sun);  animation-delay: .36s; }
+.ink-drop.k { background: var(--ink);  animation-delay: .54s; }
+@keyframes bloom {
+  0%,100% { transform: scale(.55); opacity: .45; }
+  50%     { transform: scale(1.15); opacity: 1; }
+}
+.loading h2 { font-family: "Baloo 2", cursive; font-size: 1.4rem; margin: 0 0 6px; }
+.loading p { color: var(--ink-soft); margin: 0; min-height: 1.4em; }
+
+/* ---------- Rapport ---------- */
+.summary {
+  border-radius: var(--radius); padding: 26px 28px; margin-bottom: 24px;
+  display: flex; align-items: center; gap: 20px; box-shadow: var(--shadow);
+}
+.summary.good { background: var(--leaf-bg); }
+.summary.attn { background: var(--amber-bg); }
+.summary .big { font-size: 2.6rem; line-height: 1; }
+.summary h2 { font-family: "Baloo 2", cursive; margin: 0 0 3px; font-size: 1.5rem; }
+.summary p { margin: 0; color: var(--ink-soft); }
+.summary .file { font-size: .85rem; color: var(--ink-soft); margin-top: 2px; }
+
+.cards { display: grid; gap: 14px; }
+.card {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 16px; padding: 18px 20px 18px 18px;
+  display: grid; grid-template-columns: 30px 1fr; gap: 14px; align-items: start;
+}
+.card.warn { border-left: 5px solid var(--sun); }
+.card.crit { border-left: 5px solid var(--coral); }
+.card.ok   { opacity: .82; }
+.badge { width: 26px; height: 26px; border-radius: 50%; margin-top: 2px;
+  display: grid; place-items: center; color: #fff; font-size: .95rem; font-weight: 700; }
+.badge.ok   { background: var(--leaf); }
+.badge.warn { background: var(--sun); color: var(--ink); }
+.badge.crit { background: var(--coral); }
+.card h3 { font-family: "Baloo 2", cursive; font-weight: 600;
+  margin: 0 0 3px; font-size: 1.12rem; }
+.card p { margin: 0; color: var(--ink); }
+.card ul { margin: 9px 0 0; padding-left: 18px; color: var(--ink-soft);
+  font-size: .92rem; }
+.card ul li { margin: 2px 0; }
+
+.actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  margin-top: 30px; }
+.btn { font-family: "Baloo 2", cursive; font-weight: 600; font-size: 1rem;
+  border: none; border-radius: 999px; padding: 13px 26px; cursor: pointer;
+  transition: transform .15s, box-shadow .15s; }
+.btn:hover { transform: translateY(-2px); }
+.btn:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
+.btn.primary { background: var(--coral); color: #fff;
+  box-shadow: 0 10px 22px -10px var(--coral); }
+.btn.ghost { background: transparent; color: var(--ink); border: 2px solid var(--line); }
+
+.error { background: var(--crit-bg); border-radius: 16px; padding: 22px 24px;
+  text-align: center; }
+.error h2 { font-family: "Baloo 2", cursive; margin: 0 0 6px; }
+
+footer { text-align: center; padding: 30px 20px 44px; color: var(--ink-soft);
+  font-size: .85rem; }
+footer .mark { font-family: "Shantell Sans", cursive; color: var(--ink); }
+
+.hidden { display: none !important; }
+
+/* ---------- Impression / export PDF ---------- */
+@media print {
+  body { background: #fff; }
+  header, .drop, .privacy, .loading, .actions, footer, #dropSection { display: none !important; }
+  .summary, .card { box-shadow: none; break-inside: avoid; }
+  .card.ok { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ink-drop { animation: none; opacity: .8; }
+  .drop, .btn { transition: none; }
+}
+
+@media (max-width: 560px) {
+  .summary { flex-direction: column; text-align: center; }
+  .drop { padding: 44px 20px; }
+}

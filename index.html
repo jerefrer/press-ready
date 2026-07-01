@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bon à tirer — vérifiez votre PDF avant l'imprimeur</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='12' cy='12' r='8' fill='%2323A6B8'/%3E%3Ccircle cx='20' cy='12' r='8' fill='%23E1608A' opacity='.85'/%3E%3Ccircle cx='12' cy='20' r='8' fill='%23F2B33D' opacity='.85'/%3E%3Ccircle cx='20' cy='20' r='8' fill='%23322C3D' opacity='.8'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Nunito:wght@400;600;700;800&family=Shantell+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <h1 class="wordmark">Bon à tirer</h1>
+    <p class="tagline">Vérifiez votre PDF avant de l'envoyer à l'imprimeur.
+      Glissez le fichier, on regarde ensemble ce qui va — et ce qui mérite un coup d'œil.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- Dépôt -->
+  <section id="dropSection">
+    <div id="drop" class="drop" tabindex="0" role="button"
+         aria-label="Déposez votre PDF ou cliquez pour le choisir">
+      <span class="blob c"></span><span class="blob m"></span>
+      <span class="blob y"></span><span class="blob k"></span>
+      <div class="drop-icon" aria-hidden="true">🎨</div>
+      <h2>Déposez votre PDF ici</h2>
+      <p>ou <span class="browse">cliquez pour le choisir</span></p>
+    </div>
+    <p class="privacy">Tout se passe <b>sur votre ordinateur</b> : votre fichier
+      n'est jamais envoyé nulle part.</p>
+    <input type="file" id="file" accept="application/pdf,.pdf" hidden>
+  </section>
+
+  <!-- Chargement -->
+  <section id="loading" class="loading hidden">
+    <div class="ink-row" aria-hidden="true">
+      <div class="ink-drop c"></div><div class="ink-drop m"></div>
+      <div class="ink-drop y"></div><div class="ink-drop k"></div>
+    </div>
+    <h2 id="loadTitle">Préparation des couleurs…</h2>
+    <p id="loadMsg">Premier chargement un peu plus long, ensuite c'est instantané.</p>
+  </section>
+
+  <!-- Rapport -->
+  <section id="report" class="hidden">
+    <div id="summary" class="summary"></div>
+    <div id="cards" class="cards"></div>
+    <div class="actions">
+      <button class="btn primary" id="printBtn">Enregistrer en PDF / imprimer</button>
+      <button class="btn ghost" id="againBtn">Vérifier un autre fichier</button>
+    </div>
+  </section>
+
+  <!-- Erreur -->
+  <section id="errorBox" class="error hidden">
+    <h2>Oups, je n'ai pas pu lire ce fichier</h2>
+    <p id="errorMsg"></p>
+    <div class="actions"><button class="btn primary" id="retryBtn">Réessayer</button></div>
+  </section>
+</main>
+
+<footer>
+  <p>« <span class="mark">Bon à tirer</span> » — un petit outil maison pour la série
+    <em>Maintenant, je sais…</em> · Padmakara.<br>
+    Contrôle 100 % local, aucune donnée envoyée.</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.28.2/full/pyodide.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
