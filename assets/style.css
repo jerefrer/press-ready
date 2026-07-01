@@ -40,7 +40,7 @@ body {
 .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 22px; }
 
 /* ---------- En-tête ---------- */
-header { padding: 42px 0 8px; text-align: center; }
+header { padding: 60px 0 10px; text-align: center; }
 .dots { display: flex; gap: 9px; justify-content: center; margin-bottom: 14px; }
 .dots i {
   width: 15px; height: 15px; border-radius: 50%; display: block;
@@ -61,18 +61,18 @@ header { padding: 42px 0 8px; text-align: center; }
 }
 .tagline {
   font-size: 1.05rem; color: var(--ink-soft);
-  margin: 12px auto 0; max-width: 34em;
+  margin: 18px auto 0; max-width: 34em;
   text-wrap: balance;
 }
 
 /* ---------- Zone de dépôt ---------- */
-main { padding: 26px 0 60px; }
+main { padding: 44px 0 80px; }
 .drop {
   position: relative;
   background: var(--card);
   border: 2.5px dashed var(--line);
   border-radius: var(--radius);
-  padding: 60px 30px;
+  padding: 82px 34px;
   text-align: center;
   cursor: pointer;
   transition: border-color .25s, transform .25s, background .25s;
@@ -84,11 +84,16 @@ main { padding: 26px 0 60px; }
 .drop:focus-visible { outline: 3px solid var(--cyan); outline-offset: 4px; }
 /* pastilles d'encre en coin, ambiance atelier */
 .drop .blob { position: absolute; width: 80px; height: 80px; border-radius: 50%;
-  filter: blur(14px); opacity: .5; pointer-events: none; }
-.drop .blob.c { background: var(--cyan);  top: -22px; left: -18px; }
-.drop .blob.m { background: var(--rose);  bottom: -26px; left: 30%; }
-.drop .blob.y { background: var(--sun);   top: -20px; right: 24%; }
-.drop .blob.k { background: var(--coral); bottom: -24px; right: -18px; }
+  filter: blur(14px); opacity: .5; pointer-events: none;
+  animation: bloom 9s ease-in-out infinite; }
+.drop .blob.c { background: var(--cyan);  top: -22px; left: -18px; animation-delay: 0s; }
+.drop .blob.m { background: var(--rose);  bottom: -26px; left: 30%; animation-delay: 2.2s; }
+.drop .blob.y { background: var(--sun);   top: -20px; right: 24%; animation-delay: 4.4s; }
+.drop .blob.k { background: var(--coral); bottom: -24px; right: -18px; animation-delay: 6.6s; }
+@keyframes bloom {
+  0%, 100% { transform: translate(0, 0) scale(1);       opacity: .42; }
+  50%      { transform: translate(7px, -7px) scale(1.2); opacity: .6; }
+}
 .drop-icon { font-size: 2.6rem; }
 .drop h2 { font-family: "Baloo 2", cursive; font-weight: 700;
   font-size: 1.5rem; margin: 12px 0 4px; }
@@ -96,7 +101,7 @@ main { padding: 26px 0 60px; }
 .drop .browse { color: var(--coral); font-weight: 700; text-decoration: underline;
   text-underline-offset: 3px; }
 .privacy { text-align: center; color: var(--ink-soft); font-size: .9rem;
-  margin: 16px auto 0; max-width: 34em; }
+  margin: 28px auto 0; max-width: 34em; line-height: 1.8; }
 .privacy b { color: var(--leaf); }
 
 /* ---------- Chargement : les 4 encres qui s'étalent ---------- */
@@ -173,7 +178,7 @@ main { padding: 26px 0 60px; }
   text-align: center; }
 .error h2 { font-family: "Baloo 2", cursive; margin: 0 0 6px; }
 
-footer { text-align: center; padding: 30px 20px 44px; color: var(--ink-soft);
+footer { text-align: center; padding: 48px 20px 60px; color: var(--ink-soft);
   font-size: .85rem; line-height: 1.9; }
 footer a { color: var(--coral); text-decoration: none; font-weight: 700; }
 footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -189,7 +194,8 @@ footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ink-drop { animation: none; opacity: .8; }
+  .ink-drop, .drop .blob { animation: none; }
+  .ink-drop { opacity: .8; }
   .bar.indeterminate .bar-fill, .bar-fill { animation: none; }
   .drop, .btn, .bar-fill { transition: none; }
 }
