@@ -43,19 +43,17 @@ async function fetchWithProgress(url, from, to, label) {
 
 async function ensureEngine() {
   if (pyodide) return;
-  post("engine", "Starting the engine…", 0.06, null);
+  post("engine", "Starting the engine…", 0.04, null);
   pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.2/full/" });
 
-  post("packages", "Loading the tools (numpy, Pillow)…", 0.2, null);
+  post("packages", "Loading the tools (numpy, Pillow)…", 0.12, null);
   await pyodide.loadPackage(["numpy", "Pillow"]);
 
   const WHEEL = "pymupdf-1.28.0-cp313-abi3-pyemscripten_2025_0_wasm32.whl";
   const wheelUrl = new URL("../vendor/" + WHEEL, self.location.href).href;
-  // 1) On télécharge la roue en affichant la vraie progression + ETA. Ça réchauffe
-  //    aussi le cache HTTP (sur GitHub Pages -> un seul téléchargement effectif).
-  await fetchWithProgress(wheelUrl, 0.3, 0.85, "Loading the PDF reader…");
-  // 2) Installation par l'API éprouvée loadPackage(url) (emfs n'installe pas ici).
-  post("install", "Installing the PDF reader…", 0.9, null);
+  // Loading (engine + wheel) fills 0 → 0.5 ; the analysis gets 0.5 → 1.0.
+  await fetchWithProgress(wheelUrl, 0.18, 0.42, "Loading the PDF reader…");
+  post("install", "Installing the PDF reader…", 0.46, null);
   await pyodide.loadPackage(wheelUrl);
 
   const analyzerUrl = new URL("./analyzer.py", self.location.href).href;
@@ -67,11 +65,21 @@ self.onmessage = async (e) => {
   if (!e.data || e.data.type !== "analyze") return;
   try {
     await ensureEngine();
-    post("reading", "Reading your PDF…", 0.92, null);
+    post("reading", "Reading your PDF…", 0.5, null);
     pyodide.globals.set("pdf_bytes", e.data.bytes);
-    post("analyzing", "Checking ink, colors and text…", 0.96, null);
+    // Progression réelle de l'analyse (phase la plus longue) : 0.5 → 0.96,
+    // pilotée image par image depuis Python.
+    pyodide.globals.set("emit_progress", (done, total) => {
+      if (done < 0) { post("analyzing", "Finishing up…", 0.98, null); return; }
+      const frac = total > 0 ? done / total : 0;
+      const label = total > 1
+        ? "Checking images (" + done + " / " + total + ")…"
+        : "Checking ink, colors and text…";
+      post("analyzing", label, 0.5 + 0.46 * frac, null);
+    });
+    post("analyzing", "Checking ink, colors and text…", 0.5, null);
     const json = await pyodide.runPythonAsync(
-      "import json\n_res = analyze(bytes(pdf_bytes.to_py()))\njson.dumps(_res)");
+      "import json\n_res = analyze(bytes(pdf_bytes.to_py()), progress=emit_progress)\njson.dumps(_res)");
     self.postMessage({ type: "result", result: JSON.parse(json) });
   } catch (err) {
     self.postMessage({ type: "error", message: (err && err.message) ? err.message : String(err) });

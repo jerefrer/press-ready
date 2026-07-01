@@ -64,52 +64,62 @@ def _dpi_map(doc):
     return {k: (v[0], v[1]) for k, v in out.items()}
 
 
-def _analyze_images(doc):
+def _analyze_images(doc, progress=None):
     dmap = _dpi_map(doc)
-    seen = set()
     low_dpi, over_tac, rgb_imgs = [], [], []
     yellow = trace = green = ypix = 0
+
+    # Liste des images uniques (avec leur 1re page) pour connaître le total
+    # et rapporter une progression fiable — c'est la phase la plus longue.
+    seen = set()
+    items = []
     for pno in range(doc.page_count):
         for im in doc[pno].get_images(full=True):
-            xref = im[0]
-            if xref in seen:
-                continue
-            seen.add(xref)
+            if im[0] not in seen:
+                seen.add(im[0])
+                items.append((pno, im[0]))
+    total = len(items)
+
+    for i, (pno, xref) in enumerate(items):
+        try:
+            d = doc.extract_image(xref)
+        except Exception:
+            if progress:
+                progress(i + 1, total)
+            continue
+        ncomp = d.get("colorspace", 0)
+        w, h = d.get("width", 0), d.get("height", 0)
+        dpi, page = dmap.get(xref, (None, pno + 1))
+        if dpi is not None and dpi < DPI_MIN and w * h > 10000:
+            low_dpi.append({"page": page, "dpi": dpi, "dims": f"{w}×{h}"})
+        if ncomp == 3:
+            rgb_imgs.append({"page": page, "dims": f"{w}×{h}"})
+        if ncomp == 4:
             try:
-                d = doc.extract_image(xref)
-            except Exception:
-                continue
-            ncomp = d.get("colorspace", 0)
-            w, h = d.get("width", 0), d.get("height", 0)
-            dpi, page = dmap.get(xref, (None, pno + 1))
-            if dpi is not None and dpi < DPI_MIN and w * h > 10000:
-                low_dpi.append({"page": page, "dpi": dpi, "dims": f"{w}×{h}"})
-            if ncomp == 3:
-                rgb_imgs.append({"page": page, "dims": f"{w}×{h}"})
-            if ncomp == 4:
-                try:
-                    pil = Image.open(io.BytesIO(d["image"]))
-                    if pil.mode != "CMYK":
-                        continue
+                pil = Image.open(io.BytesIO(d["image"]))
+                if pil.mode == "CMYK":
                     a = np.asarray(pil)
                     s = max(1, max(a.shape[:2]) // 500)
                     a = to_ink(a[::s, ::s, :])
-                except Exception:
-                    continue
-                C, M, Y, K = a[..., 0], a[..., 1], a[..., 2], a[..., 3]
-                tac = a.sum(2)
-                mx = float(tac.max())
-                if mx > TAC_MAX:
-                    pct = 100.0 * float((tac > TAC_MAX).sum()) / tac.size
-                    if pct >= 0.05:
-                        over_tac.append({"page": page, "tac": round(mx),
-                                         "area": round(pct, 1)})
-                yel = (Y >= Y_MIN) & (M <= M_MAX) & (K <= K_MAX)
-                pol = yel & (C >= C_MIN)
-                yellow += int(yel.sum())
-                trace += int((pol & (C < CYAN_TRACE_MAX)).sum())
-                green += int((pol & (C >= CYAN_TRACE_MAX)).sum())
-                ypix += a.shape[0] * a.shape[1]
+                    C, M, Y, K = a[..., 0], a[..., 1], a[..., 2], a[..., 3]
+                    tac = a.sum(2)
+                    mx = float(tac.max())
+                    if mx > TAC_MAX:
+                        pct = 100.0 * float((tac > TAC_MAX).sum()) / tac.size
+                        if pct >= 0.05:
+                            over_tac.append({"page": page, "tac": round(mx),
+                                             "area": round(pct, 1)})
+                    yel = (Y >= Y_MIN) & (M <= M_MAX) & (K <= K_MAX)
+                    pol = yel & (C >= C_MIN)
+                    yellow += int(yel.sum())
+                    trace += int((pol & (C < CYAN_TRACE_MAX)).sum())
+                    green += int((pol & (C >= CYAN_TRACE_MAX)).sum())
+                    ypix += a.shape[0] * a.shape[1]
+            except Exception:
+                pass
+        if progress:
+            progress(i + 1, total)
+
     low_dpi.sort(key=lambda x: x["dpi"])
     over_tac.sort(key=lambda x: -x["area"])
     return {"low_dpi": low_dpi, "over_tac": over_tac, "rgb_imgs": rgb_imgs,
@@ -244,10 +254,12 @@ def _meta(doc):
 
 
 # --------------------------------------------------------------------------- #
-def analyze(data):
+def analyze(data, progress=None):
     doc = pymupdf.open(stream=data, filetype="pdf")
     pages = doc.page_count
-    img = _analyze_images(doc)
+    img = _analyze_images(doc, progress)
+    if progress:
+        progress(-1, -1)  # signal : « finition » (vecteurs, polices, boîtes)
     vec = _analyze_vectors(doc)
     fonts = _analyze_fonts(doc)
     boxes = _analyze_boxes(doc)
