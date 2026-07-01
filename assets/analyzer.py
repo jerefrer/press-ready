@@ -255,111 +255,111 @@ def analyze(data):
 
     findings = []
 
-    # Texte noir
+    # Black text
     if vec["quadri"] > 0:
         findings.append({
             "key": "black", "severity": "crit",
-            "title": "Texte noir en quadrichromie",
-            "message": f"{vec['quadri']} bloc(s) de texte noir sont fabriqués "
-                       "avec les 4 encres au lieu du noir seul (K100). "
-                       "Ré-exportez avec le noir en K100.",
+            "title": "Black text built from four inks",
+            "message": f"{vec['quadri']} block(s) of black text are built from all "
+                       "four inks instead of black only (K100). "
+                       "Re-export with black set to K100.",
             "items": []})
     else:
         findings.append({
             "key": "black", "severity": "ok",
-            "title": "Texte noir en noir seul (K100)",
-            "message": "Aucun texte noir en quadrichromie.", "items": []})
+            "title": "Black text is black-only (K100)",
+            "message": "No four-color black text.", "items": []})
 
-    # RGB résiduel
+    # Leftover RGB
     if img["rgb_imgs"] or vec["rgb_ops"]:
         parts = []
         if img["rgb_imgs"]:
-            parts.append(f"{len(img['rgb_imgs'])} image(s) RVB")
+            parts.append(f"{len(img['rgb_imgs'])} RGB image(s)")
         if vec["rgb_ops"]:
-            parts.append(f"{vec['rgb_ops']} couleur(s) vectorielle(s) RVB")
+            parts.append(f"{vec['rgb_ops']} RGB vector color(s)")
         findings.append({
             "key": "rgb", "severity": "crit",
-            "title": "Couleurs RVB résiduelles",
-            "message": "Trouvé : " + ", ".join(parts) +
-                       ". Tout doit être converti en CMJN FOGRA52.",
+            "title": "Leftover RGB colors",
+            "message": "Found: " + ", ".join(parts) +
+                       ". Everything should be converted to CMYK (FOGRA52).",
             "items": [f"page {r['page']} ({r['dims']})" for r in img["rgb_imgs"][:8]]})
     else:
         findings.append({
-            "key": "rgb", "severity": "ok", "title": "Tout en CMJN",
-            "message": "Aucune couleur RVB résiduelle.", "items": []})
+            "key": "rgb", "severity": "ok", "title": "Everything in CMYK",
+            "message": "No leftover RGB colors.", "items": []})
 
-    # Encrage TAC
+    # Ink coverage (TAC)
     if img["over_tac"]:
         findings.append({
             "key": "tac", "severity": "warn",
-            "title": "Trop d'encre (sur-encrage)",
-            "message": f"{len(img['over_tac'])} image(s) dépassent {int(TAC_MAX)}% "
-                       "d'encre. À corriger en reconvertissant via FOGRA52.",
-            "items": [f"page {t['page']} : {t['tac']}% sur {t['area']}% de l'image"
+            "title": "Too much ink (ink coverage)",
+            "message": f"{len(img['over_tac'])} image(s) exceed {int(TAC_MAX)}% total "
+                       "ink. Fix by reconverting through FOGRA52.",
+            "items": [f"page {t['page']}: {t['tac']}% over {t['area']}% of the image"
                       for t in img["over_tac"][:10]]})
     else:
         findings.append({
-            "key": "tac", "severity": "ok", "title": "Encrage maîtrisé",
-            "message": f"Aucune image au-dessus de {int(TAC_MAX)}% d'encre.",
+            "key": "tac", "severity": "ok", "title": "Ink coverage under control",
+            "message": f"No image above {int(TAC_MAX)}% total ink.",
             "items": []})
 
-    # Résolution
+    # Resolution
     if img["low_dpi"]:
         findings.append({
             "key": "dpi", "severity": "warn",
-            "title": "Images en basse définition",
-            "message": f"{len(img['low_dpi'])} image(s) sous {int(DPI_MIN)} dpi. "
-                       "À remplacer par des versions de meilleure qualité.",
-            "items": [f"page {d['page']} : {d['dpi']} dpi ({d['dims']})"
+            "title": "Low-resolution images",
+            "message": f"{len(img['low_dpi'])} image(s) below {int(DPI_MIN)} dpi. "
+                       "Replace them with higher-resolution versions.",
+            "items": [f"page {d['page']}: {d['dpi']} dpi ({d['dims']})"
                       for d in img["low_dpi"][:10]]})
     else:
         findings.append({
-            "key": "dpi", "severity": "ok", "title": "Résolution suffisante",
-            "message": f"Toutes les images ≥ {int(DPI_MIN)} dpi.", "items": []})
+            "key": "dpi", "severity": "ok", "title": "Resolution is fine",
+            "message": f"All images ≥ {int(DPI_MIN)} dpi.", "items": []})
 
-    # Jaunes
+    # Yellows
     yp = img["yellow"] or 1
     tr_pct = round(100 * img["trace"] / yp)
     if img["trace"] > 0 and tr_pct >= 5:
         findings.append({
             "key": "yellow", "severity": "warn",
-            "title": "Jaunes qui peuvent verdir",
-            "message": f"Environ {tr_pct}% des zones jaunes contiennent un peu de "
-                       "cyan (tendance à tirer vers le vert sur papier non couché). "
-                       "À vérifier côté illustration.",
+            "title": "Yellows that may shift green",
+            "message": f"About {tr_pct}% of yellow areas contain some cyan "
+                       "(tends to shift toward green on uncoated paper). "
+                       "Worth checking in the artwork.",
             "items": []})
     else:
         findings.append({
-            "key": "yellow", "severity": "ok", "title": "Jaunes propres",
-            "message": "Pas de cyan notable dans les jaunes.", "items": []})
+            "key": "yellow", "severity": "ok", "title": "Clean yellows",
+            "message": "No noticeable cyan in the yellows.", "items": []})
 
-    # Polices
+    # Fonts
     if fonts["not_embedded"]:
         findings.append({
             "key": "fonts", "severity": "crit",
-            "title": "Polices non incluses",
-            "message": f"{len(fonts['not_embedded'])} police(s) ne sont pas "
-                       "incluses dans le PDF (risque de substitution).",
+            "title": "Fonts not embedded",
+            "message": f"{len(fonts['not_embedded'])} font(s) are not embedded in "
+                       "the PDF (risk of substitution at the printer).",
             "items": fonts["not_embedded"][:8]})
     else:
         findings.append({
-            "key": "fonts", "severity": "ok", "title": "Polices incluses",
-            "message": f"Les {fonts['count']} police(s) sont incluses.", "items": []})
+            "key": "fonts", "severity": "ok", "title": "Fonts embedded",
+            "message": f"All {fonts['count']} font(s) are embedded.", "items": []})
 
-    # Fond perdu
+    # Bleed
     if boxes["no_trim"] or boxes["low_bleed"]:
         msg = []
         if boxes["no_trim"]:
-            msg.append(f"{len(boxes['no_trim'])} page(s) sans cadre de coupe")
+            msg.append(f"{len(boxes['no_trim'])} page(s) without a trim box")
         if boxes["low_bleed"]:
-            msg.append(f"{len(boxes['low_bleed'])} page(s) avec fond perdu < {int(BLEED_MM)} mm")
+            msg.append(f"{len(boxes['low_bleed'])} page(s) with bleed < {int(BLEED_MM)} mm")
         findings.append({
-            "key": "bleed", "severity": "warn", "title": "Fond perdu à vérifier",
-            "message": " ; ".join(msg) + ".", "items": []})
+            "key": "bleed", "severity": "warn", "title": "Bleed to check",
+            "message": "; ".join(msg) + ".", "items": []})
     else:
         findings.append({
-            "key": "bleed", "severity": "ok", "title": "Fond perdu présent",
-            "message": f"Cadre de coupe et fond perdu ≥ {int(BLEED_MM)} mm.",
+            "key": "bleed", "severity": "ok", "title": "Bleed present",
+            "message": f"Trim box present and bleed ≥ {int(BLEED_MM)} mm.",
             "items": []})
 
     n_crit = sum(1 for f in findings if f["severity"] == "crit")

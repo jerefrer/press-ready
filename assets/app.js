@@ -26,11 +26,11 @@ const setLoad = (title, msg) => {
 // Prépare Pyodide + PyMuPDF au premier usage (mise en cache navigateur ensuite).
 async function ensureEngine() {
   if (pyodide) return;
-  setLoad("Préparation des couleurs…", "Chargement de l'atelier (une fois).");
+  setLoad("Mixing the inks…", "Setting up the workshop (one time).");
   pyodide = await loadPyodide();
-  setLoad(null, "Chargement des outils d'analyse…");
+  setLoad(null, "Loading the analysis tools…");
   await pyodide.loadPackage(["numpy", "Pillow"]);
-  setLoad(null, "Chargement du lecteur PDF…");
+  setLoad(null, "Loading the PDF reader…");
   await pyodide.loadPackage("./vendor/pymupdf-1.28.0-cp313-abi3-pyemscripten_2025_0_wasm32.whl");
   analyzerSrc = await (await fetch("assets/analyzer.py")).text();
   pyodide.runPython(analyzerSrc);
@@ -38,10 +38,10 @@ async function ensureEngine() {
 
 async function analyze(file) {
   show("loading");
-  setLoad("Préparation des couleurs…", "");
+  setLoad("Mixing the inks…", "");
   try {
     await ensureEngine();
-    setLoad("Lecture de votre PDF…", file.name);
+    setLoad("Reading your PDF…", file.name);
     const buf = new Uint8Array(await file.arrayBuffer());
     pyodide.globals.set("pdf_bytes", buf);
     const resultJson = await pyodide.runPythonAsync(`
@@ -53,7 +53,7 @@ json.dumps(_res)
   } catch (e) {
     console.error(e);
     el.errorMsg.textContent =
-      "Détail technique : " + (e && e.message ? e.message : e);
+      "Technical detail: " + (e && e.message ? e.message : e);
     show("errorBox");
   }
 }
@@ -67,10 +67,10 @@ function renderReport(res, filename) {
   el.summary.innerHTML = `
     <div class="big" aria-hidden="true">${good ? "✨" : "🖐️"}</div>
     <div>
-      <h2>${good ? "Votre fichier a l'air prêt !" : "Quelques points à regarder"}</h2>
+      <h2>${good ? "Your file looks ready!" : "A few things to look at"}</h2>
       <p>${good
-        ? "Aucun souci détecté sur les contrôles habituels."
-        : `${res.n_crit} point(s) important(s) et ${res.n_warn} à vérifier avant l'imprimeur.`}</p>
+        ? "No issues found on the usual checks."
+        : `${res.n_crit} important point(s) and ${res.n_warn} to check before printing.`}</p>
       <p class="file">${filename} · ${res.pages} page(s)${res.meta.pdfx ? " · " + res.meta.pdfx : ""}</p>
     </div>`;
 
@@ -98,7 +98,7 @@ function escapeHtml(s) {
 function pick(file) {
   if (!file) return;
   if (file.type && file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-    el.errorMsg.textContent = "Ce fichier n'est pas un PDF.";
+    el.errorMsg.textContent = "This file isn't a PDF.";
     show("errorBox");
     return;
   }
