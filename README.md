@@ -34,6 +34,20 @@ Your file is never uploaded anywhere.
 Open the page, drop a PDF, read the report.
 Save the report as a PDF to share it.
 
+### Run it locally
+
+Serve the folder over HTTP — opening `index.html` directly won't work
+(the browser blocks loading the engine over `file://`):
+
+```bash
+python3 -m http.server 8000
+```
+
+Then open <http://localhost:8000/>.
+(`npx serve` or the VS Code Live Server extension work too.)
+
+The first load fetches Pyodide and fonts from a CDN; after that it's cached.
+
 ### Host it (GitHub Pages)
 
 **Settings → Pages → Deploy from a branch → `main` / `root`.**
